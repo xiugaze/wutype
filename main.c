@@ -3,15 +3,9 @@
 #include <ncurses.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 #include <unistd.h>
 #include <wchar.h>
-#include <time.h>
-// #define TOP_LEFT L'\u256D'
-// #define TOP_RIGHT L'\u256E'
-// #define BOTTOM_RIGHT L'\u256F'
-// #define BOTTOM_LEFT L'\u2570'
-// #define VERTICAL L'\u2503'
-// #define lHORIZONTAL L'\u2500'
 
 typedef enum {
     UNTYPED = 0,
@@ -19,8 +13,28 @@ typedef enum {
     CORRECT,
 } character_state;
 
+void endcard(float time, int length, int incorrect, int misses) {
+    attron(COLOR_PAIR(2)); // Turn on white color for
+    attroff(A_UNDERLINE);  // Turn off underline after printing cursor
+    double accuracy = 100 - incorrect / (double)(length) * 100;
+    double wpm = ((length / time) * 60) / 5;
+    mvprintw(4, 4, "WPM: %.2lf \n\tAccuracy: %.2f%%\n\tMisses: %d", wpm,
+             accuracy, misses);
+    refresh();
+}
+
+int compute_accuracy(character_state *state, int length) {
+    int incorrect = 0;
+    for (int i = 0; i < length; i++) {
+        if (state[i] == INCORRECT) {
+            incorrect++;
+        }
+    }
+    return incorrect;
+}
+
 void print_line(const char *text, character_state *state, int cursorPosition) {
-    move(0, 0); // Move to the start of the line
+    move(4, 4); // Move to the start of the line
     for (int i = 0; text[i] != '\0'; i++) {
         if (state[i] == INCORRECT) {
             if (text[i] == ' ') {
@@ -50,37 +64,68 @@ void print_line(const char *text, character_state *state, int cursorPosition) {
     }
 }
 
-// void print_box(int x, int y, int width, int height) {
-//     for(int i = 0; i < width; i++) {
-//         mvaddch(y, x + i, HORIZONTAL);
-//         mvaddch(y+width, x + i, HORIZONTAL);
-//     }
-//
-// }
-
-int main(int argc, char *argv[]) {
+void init_curses() {
     initscr();            // Initialize NCurses
     start_color();        // Enable color support
     cbreak();             // Disable line buffering
     noecho();             // Don't echo input characters
     keypad(stdscr, TRUE); // Enable special keys
-    curs_set(
-        0); // Set cursor visibility (0: invisible, 1: visible, 2: very visible)
-    // Initialize color pair for red text
+    curs_set(0);
     init_pair(1, COLOR_RED, COLOR_BLACK);
     init_pair(2, COLOR_GREEN, COLOR_BLACK);
     init_pair(3, COLOR_WHITE, COLOR_BLACK);
+}
 
-    const char *originalText = "Hello, this is a sample line!";
+int get_line(char *buffer, int size) {
+
+    FILE *file = fopen("./words.txt", "r");
+
+    int line_number = rand() % 1000;
+
+    for (int i = 1; i < line_number; ++i) {
+        if (fgets(buffer, (int)size, file) == NULL) {
+            fprintf(stderr, "Error reading file.\n");
+            return -1;
+        }
+    }
+
+    if (fgets(buffer, (int)size, file) == NULL) {
+        fprintf(stderr, "Error reading file.\n");
+        return - 1;
+    }
+    
+    if(buffer[strlen(buffer) - 1] == '\n') {
+        buffer[strlen(buffer) - 1] = ' ';
+    }
+
+    fclose(file);
+
+    return strlen(buffer);
+}
+
+int main(int argc, char *argv[]) {
+    init_curses();
+    srand(time(NULL));
+
+    // const char *originalText = "Hello, this is a sample line!";
+    char* originalText = calloc(300, sizeof(char));
+
+    for(int i = 0; i < 30; i++) {
+        char* word = malloc(sizeof(char)*30);
+        get_line(word, 30);
+        strcat(originalText, word);
+        free(word);
+    }
+
     int length = strlen(originalText);
     character_state *state = calloc(length, sizeof(character_state));
 
     int cursorPosition = 0;
+    time_t start_t, end_t;
+    double diff;
 
-    time_t t;
-    struct tm *tm;
-    tm=localtime(&t);
-
+    int started = 0;
+    int misses = 0;
     while (1) {
         clear(); // Clear the screen
 
@@ -91,20 +136,26 @@ int main(int argc, char *argv[]) {
 
         int userInput = getch(); // Get user input
 
+        if (!started) {
+            time(&start_t);
+            started = !started;
+        }
+
         if (userInput == KEY_LEFT && cursorPosition > 0) {
             cursorPosition--; // Move the cursor left
         } else if (userInput == KEY_RIGHT &&
                    cursorPosition < strlen(originalText)) {
-            cursorPosition++; // Move the cursor right
+            cursorPosition++;         // Move the cursor right
         } else if (userInput == 27) { // 27 is the ASCII code for the escape key
             break; // Exit the loop if the escape key is pressed
-        } else if (userInput == KEY_BACKSPACE) {
+        } else if (userInput == KEY_BACKSPACE && cursorPosition >= 0) {
             cursorPosition--;
             state[cursorPosition] = UNTYPED;
         } else {
             if (cursorPosition < strlen(originalText) &&
                 originalText[cursorPosition] != userInput) {
                 state[cursorPosition] = INCORRECT;
+                misses++;
             } else {
                 state[cursorPosition] = CORRECT;
             }
@@ -113,31 +164,19 @@ int main(int argc, char *argv[]) {
             print_line(originalText, state, cursorPosition);
         }
 
-        if(cursorPosition == length) {
+        if (cursorPosition == length) {
             break;
         }
     }
     clear();
 
-    struct tm* tm_2 = localtime(&t);
-    // double elapsed_time = (end_time.tv_sec - start_time.tv_sec) +
-    //                       (end_time.tv_nsec - start_time.tv_nsec) / 1e9;
-    int elapsed_time = tm_2->tm_sec - tm->tm_sec;
+    time(&end_t);
+    diff = difftime(end_t, start_t);
 
-    int num_incorrect = 0;
-    for(int i = 0; i < length; i++) {
-        if(state[i] == INCORRECT) {
-            num_incorrect++;
-        }
-    }
+    int wrong = compute_accuracy(state, length);
+    endcard(diff, length, wrong, misses);
 
-
-    double accuracy = 100 - num_incorrect/(double)(length)*100;
-    mvprintw(4, 4, "Time: %d seconds\nAccuracy: %.2f%%\nMisses: %d", elapsed_time, accuracy, num_incorrect);
-    refresh();
     sleep(10);
-
-
 
     endwin(); // End NCurses
 }
