@@ -1,11 +1,14 @@
-#include <bits/time.h>
 #include <locale.h>
 #include <ncurses.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
 #include <unistd.h>
 #include <wchar.h>
+
+#define CORNER 4
+#define WIDTH 60
 
 typedef enum {
     UNTYPED = 0,
@@ -13,14 +16,82 @@ typedef enum {
     CORRECT,
 } character_state;
 
-void endcard(float time, int length, int incorrect, int misses) {
+typedef enum {
+    EASY,
+    HARD,
+    WU,
+    CUSTOM,
+} gamemode;
+
+typedef struct {
+    int mx;
+    int my;
+} window_size;
+
+window_size get_window_size() {
+    int mx = 0, my = 0;
+    getmaxyx(stdscr, my, mx);
+    window_size s = {mx, my};
+    return s;
+}
+
+void print_box(int y, int x, int height, int width) {
+    const static wchar_t *top_left = L"╭";
+    const static wchar_t *top_right = L"╮";
+    const static wchar_t *bottom_left = L"╰";
+    const static wchar_t *bottom_right = L"╯";
+    const static wchar_t *vertical = L"│";
+    const static wchar_t *horizontal = L"─";
+
+    mvprintw(y, x, "%ls", top_left);
+    mvprintw(y, x + width, "%ls", top_right);
+    mvprintw(y + height, x, "%ls", bottom_left);
+    mvprintw(y + height, x + width, "%ls", bottom_right);
+
+    for (int i = x + 1; i < x + width; i++) {
+        mvprintw(y, i, "%ls", horizontal);
+        mvprintw(y + height, i, "%ls", horizontal);
+    }
+
+    for (int i = y + 1; i < y + height; i++) {
+        mvprintw(i, x, "%ls", vertical);
+        mvprintw(i, x + width, "%ls", vertical);
+    }
+
+    refresh();
+}
+
+void startcard(int my, int mx) {
+    print_box(my / 2 - 12, mx / 2 - 6, 4, 10);
+    mvprintw(my / 2 - 10, mx / 2 - 3, "start");
+    refresh();
+    while (1) {
+        int input = getch();
+        if (input == '\n') {
+            break;
+        }
+    }
+}
+void endcard(float time, int length, int incorrect, int misses, int mx,
+             int my) {
     attron(COLOR_PAIR(2)); // Turn on white color for
     attroff(A_UNDERLINE);  // Turn off underline after printing cursor
     double accuracy = 100 - incorrect / (double)(length) * 100;
     double wpm = ((length / time) * 60) / 5;
-    mvprintw(4, 4, "WPM: %.2lf \n\tAccuracy: %.2f%%\n\tMisses: %d", wpm,
-             accuracy, misses);
+
+    mvprintw(my / 2 - 10, mx / 2 - 10, "WPM: %.2lf", wpm);
+    mvprintw(my / 2 - 9, mx / 2 - 10, "Accuracy: %.2f%%", accuracy);
+    mvprintw(my / 2 - 8, mx / 2 - 10, "Misses: %d", misses);
+
+    print_box(my / 2 - 12, mx / 2 - 13, 6, 22);
+
     refresh();
+    while (1) {
+        int input = getch();
+        if (input == '\n') {
+            break;
+        }
+    }
 }
 
 int compute_accuracy(character_state *state, int length) {
@@ -33,38 +104,91 @@ int compute_accuracy(character_state *state, int length) {
     return incorrect;
 }
 
-void print_line(const char *text, character_state *state, int cursorPosition) {
-    move(4, 4); // Move to the start of the line
-    for (int i = 0; text[i] != '\0'; i++) {
-        if (state[i] == INCORRECT) {
-            if (text[i] == ' ') {
+void print_char(const char *text, character_state *state, int cursor_position,
+                int position) {
 
-                attron(A_UNDERLINE); // Underline the cursor position
-            }
-            attron(COLOR_PAIR(1)); // Turn on red color for incorrect characters
-        } else if (state[i] == CORRECT) {
-            attron(COLOR_PAIR(2)); // Turn on white color for
-        } else {
-            attron(COLOR_PAIR(3)); // turn on gray color for untyped
-        }
+    // FIRST: Choose the color
+    if (state[position] == INCORRECT) {
+        // Incorrect
+        attron(COLOR_PAIR(1)); // incorrect color is red
 
-        if (i == cursorPosition) {
+        // Missed spaces should get underlined
+        if (text[position] == ' ') {
             attron(A_UNDERLINE); // Underline the cursor position
         }
 
-        addch(text[i]);
+    } else if (state[position] == CORRECT) {
 
-        if (i == cursorPosition) {
-            attroff(A_UNDERLINE); // Turn off underline after printing cursor
-                                  // position
+        attron(COLOR_PAIR(2)); // correct color is red
+
+    } else { // state[position] == UNTYPED
+
+        attron(COLOR_PAIR(3)); // untyped color is gray
+    }
+
+    // if the currently printed character is at the cursor position
+    if (position == cursor_position) {
+        attron(A_REVERSE); // Underline the cursor position
+    }
+
+    // mvprintw(y, x, "%c", text[position]);
+    addch(text[position]);
+
+    attroff(A_REVERSE);   // Turn off underline after printing cursor
+    attroff(A_UNDERLINE); // Turn off underline after printing cursor
+}
+
+void print_frame(const char *text, character_state *state, int cursor_position,
+                 int cursor_start, int cursor_end) {
+    /*
+     * NOTE: cursor_position is the USER cursor, not the ncurses cursor,
+     * move(y, x) moves the ncurses "pen"
+     */
+
+    int row_start = cursor_start / 2;
+    move(row_start, cursor_start); // Move to the top-left corner
+
+    int current_line_length = 0;
+    int current_line = 0;
+    int start = 0;
+    int next = 0;
+
+    while (1) {
+
+        // advance the next pointer until the next space
+        while (text[next] != ' ') {
+            next++;
+        }
+        // text[next] == ' '
+
+        int word_length = next - start;
+
+        // if we add the word to the line and it overfills, don't do that
+        if (current_line_length + word_length > (cursor_end - cursor_start)) {
+            current_line++;
+            current_line_length = 0;
+            move(row_start + current_line, cursor_start);
         }
 
-        if (text[i] == ' ') {
+        // print the word
+        for (int i = start; i < next; i++) {
+            print_char(text, state, cursor_position, i);
+        }
+
+        current_line_length += word_length;
+        start = next + 1;
+        next = start;
+
+        if (text[start] == '\0') {
+            break;
+        } else {
+            print_char(text, state, cursor_position, start - 1);
         }
     }
 }
 
-void init_curses() {
+window_size init_curses() {
+    setlocale(LC_ALL, "C.UTF-8");
     initscr();            // Initialize NCurses
     start_color();        // Enable color support
     cbreak();             // Disable line buffering
@@ -74,12 +198,35 @@ void init_curses() {
     init_pair(1, COLOR_RED, COLOR_BLACK);
     init_pair(2, COLOR_GREEN, COLOR_BLACK);
     init_pair(3, COLOR_WHITE, COLOR_BLACK);
+    return get_window_size();
 }
 
-int get_line(char *buffer, int size) {
+int readFileToString(const char *filename, char *buffer, size_t bufferSize) {
+    // Open the file for reading
+    FILE *file = fopen(filename, "r");
+    if (file == NULL) {
+        fprintf(stderr, "Error opening file %s\n", filename);
+        return 0;
+    }
 
-    FILE *file = fopen("./words.txt", "r");
+    size_t bytesRead = fread(buffer, 1, bufferSize - 1, file);
+    buffer[bytesRead] = '\0';
 
+    // Close the file
+    fclose(file);
+
+    // Remove newlines from the buffer
+    for (size_t i = 0; i < bytesRead; ++i) {
+        if (buffer[i] == '\n') {
+            buffer[i] = ' ';
+        }
+    }
+    return bytesRead;
+}
+
+int get_line(char *filename, char *buffer, int size) {
+
+    FILE *file = fopen(filename, "r");
     int line_number = rand() % 1000;
 
     for (int i = 1; i < line_number; ++i) {
@@ -91,10 +238,10 @@ int get_line(char *buffer, int size) {
 
     if (fgets(buffer, (int)size, file) == NULL) {
         fprintf(stderr, "Error reading file.\n");
-        return - 1;
+        return -1;
     }
-    
-    if(buffer[strlen(buffer) - 1] == '\n') {
+
+    if (buffer[strlen(buffer) - 1] == '\n') {
         buffer[strlen(buffer) - 1] = ' ';
     }
 
@@ -103,22 +250,80 @@ int get_line(char *buffer, int size) {
     return strlen(buffer);
 }
 
+void print_help() { printf("help text\n"); }
+
 int main(int argc, char *argv[]) {
-    init_curses();
+    int num_words = 30;
+    gamemode mode = EASY;
+    char *filename = malloc(sizeof(char) * 100);
+
+    int opt;
+    while ((opt = getopt(argc, argv, "f:n:hcw")) != -1) {
+        switch (opt) {
+            case 'n':
+                num_words = atoi(optarg);
+                break;
+            case 'f':
+                if (access(optarg, F_OK) != 0) {
+                    printf("Error: file %s not found, exiting\n", optarg);
+                    exit(1);
+                } else {
+                    strcpy(filename, optarg);
+                    mode = CUSTOM;
+                }
+                break;
+            case 'h':
+                print_help();
+                exit(0);
+            case 'w':
+                mode = WU;
+                break;
+
+            case 'c':
+                mode = HARD;
+                break;
+        }
+    }
+
+    switch(mode) {
+        case EASY:
+            strcpy(filename, "./words/simple.txt");
+            break;
+        case HARD: 
+            strcpy(filename, "./words/complex.txt");
+            break;
+        case CUSTOM: 
+            break;
+        case WU:
+            num_words = 100;
+            break;
+    }
+
+    window_size size = init_curses();
+    int cursor_start = (int)(0.15 * size.mx);
+    int cursor_end = (int)(0.70 * size.mx);
+
     srand(time(NULL));
 
-    // const char *originalText = "Hello, this is a sample line!";
-    char* originalText = calloc(300, sizeof(char));
 
-    for(int i = 0; i < 30; i++) {
-        char* word = malloc(sizeof(char)*30);
-        get_line(word, 30);
-        strcat(originalText, word);
-        free(word);
+    // const char *originalText = "Hello, this is a sample line!";
+    char *originalText = calloc(30 * num_words, sizeof(char));
+
+    if(mode != WU) {
+        for (int i = 0; i < num_words; i++) {
+            char *word = malloc(sizeof(char) * 30);
+            get_line(filename, word, 30);
+            strcat(originalText, word);
+            free(word);
+        }
+    } else {
+        readFileToString("./words/ruckus.txt", originalText, num_words*30);
     }
 
     int length = strlen(originalText);
     character_state *state = calloc(length, sizeof(character_state));
+
+    startcard(size.my, size.mx);
 
     int cursorPosition = 0;
     time_t start_t, end_t;
@@ -130,9 +335,8 @@ int main(int argc, char *argv[]) {
         clear(); // Clear the screen
 
         // Print the line with cursor and highlight
-        print_line(originalText, state, cursorPosition);
-
-        refresh(); // Update the screen
+        print_frame(originalText, state, cursorPosition, cursor_start,
+                    cursor_end);
 
         int userInput = getch(); // Get user input
 
@@ -141,14 +345,7 @@ int main(int argc, char *argv[]) {
             started = !started;
         }
 
-        if (userInput == KEY_LEFT && cursorPosition > 0) {
-            cursorPosition--; // Move the cursor left
-        } else if (userInput == KEY_RIGHT &&
-                   cursorPosition < strlen(originalText)) {
-            cursorPosition++;         // Move the cursor right
-        } else if (userInput == 27) { // 27 is the ASCII code for the escape key
-            break; // Exit the loop if the escape key is pressed
-        } else if (userInput == KEY_BACKSPACE && cursorPosition >= 0) {
+        if (userInput == KEY_BACKSPACE && cursorPosition >= 0) {
             cursorPosition--;
             state[cursorPosition] = UNTYPED;
         } else {
@@ -161,10 +358,11 @@ int main(int argc, char *argv[]) {
             }
             cursorPosition++;
 
-            print_line(originalText, state, cursorPosition);
+            print_frame(originalText, state, cursorPosition, cursor_start,
+                        cursor_end);
         }
 
-        if (cursorPosition == length) {
+        if (cursorPosition == length - 1) {
             break;
         }
     }
@@ -174,9 +372,7 @@ int main(int argc, char *argv[]) {
     diff = difftime(end_t, start_t);
 
     int wrong = compute_accuracy(state, length);
-    endcard(diff, length, wrong, misses);
-
-    sleep(10);
+    endcard(diff, length, wrong, misses, size.mx, size.my);
 
     endwin(); // End NCurses
 }
