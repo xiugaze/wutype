@@ -21,6 +21,7 @@ typedef enum {
     HARD,
     WU,
     TAYLOR,
+    CHRIS,
 } gamemode;
 
 typedef struct {
@@ -282,6 +283,7 @@ void print_help() {
         "\t-c: use complex dictionary\n"
         "\t-w: use wu-tang dictionary\n"
         "\t-t: use dr. taylor's CS2852 lab 9 dictionary (warning: contains slurs)\n"
+        "\t-C: my roomate chris' favorite words\n"
         "\t-n <number>: specify number of words\n"
     ); 
 }
@@ -293,7 +295,7 @@ int main(int argc, char *argv[]) {
     char *filename = malloc(sizeof(char) * 100);
 
     int opt;
-    while ((opt = getopt(argc, argv, "n:hcwt")) != -1) {
+    while ((opt = getopt(argc, argv, "n:hcwtCD")) != -1) {
         switch (opt) {
             case 'n':
                 num_words = atoi(optarg);
@@ -306,6 +308,9 @@ int main(int argc, char *argv[]) {
                 break;
             case 'c':
                 mode = HARD;
+                break;
+            case 'C':
+                mode = CHRIS;
                 break;
             case 't':
                 mode = TAYLOR;
@@ -325,6 +330,10 @@ int main(int argc, char *argv[]) {
         case TAYLOR: 
             strcpy(filename, "./words/taylor.txt");
             dict_size = 113809;
+            break;
+        case CHRIS: 
+            strcpy(filename, "./words/chris.txt");
+            dict_size = 26;
             break;
         case WU:
             num_words = 100;
