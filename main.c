@@ -21,6 +21,7 @@ typedef enum {
     HARD,
     WU,
     CUSTOM,
+    TAYLOR,
 } gamemode;
 
 typedef struct {
@@ -61,9 +62,33 @@ void print_box(int y, int x, int height, int width) {
     refresh();
 }
 
-void startcard(int my, int mx) {
-    print_box(my / 2 - 12, mx / 2 - 6, 4, 10);
-    mvprintw(my / 2 - 10, mx / 2 - 3, "start");
+void draw_logo(int y, int x) {
+    const wchar_t* logo1 = L" ⢀⣀⡀⠀⠀⠀⠀⠀⠀⢀⣠⣴⣦⡀";
+    const wchar_t* logo2 = L"⢀⣿⣿⣿⣿⣷⠂⠀⡐⢾⣿⣿⣿⣿⣷⠀";
+    const wchar_t* logo3 = L"⢸⣿⣿⣿⣿⣿⣄⣿⣿⣼⣿⣿⣿⣿⣿⡇";
+    const wchar_t* logo4 = L"⢸⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡇";
+    const wchar_t* logo5 = L"⠀⢻⣿⣿⣿⣿⣿⡟⠉⢻⣿⣿⣿⣿⡿⠁";
+    const wchar_t* logo6 = L"⠀ ⠉⠻⢿⣿⣿⣷⡀⢸⣿⣿⡿⠟⠁⠀";
+    const wchar_t* logo7 = L"⠀⠀⠀⠀  ⠀⠈⠁⠿⠛⠉⠀⠀⠀⠀";
+    mvprintw(y+1, x, "%ls", logo1);
+    mvprintw(y+2, x, "%ls", logo2);
+    mvprintw(y+3, x, "%ls", logo3);
+    mvprintw(y+4, x, "%ls", logo4);
+    mvprintw(y+5, x, "%ls", logo5);
+    mvprintw(y+6, x, "%ls", logo6);
+    mvprintw(y+7, x, "%ls", logo7);
+}
+
+void startcard(int my, int mx, gamemode mode) {
+    if(mode == WU) {
+        attron(COLOR_PAIR(2)); // Turn on white color for
+        print_box(my / 2 - 12, mx/2 - 16, 4, 28);
+        mvprintw(my / 2 - 10, mx/2 - 12, "enter the 36 chambers");
+        draw_logo(my/2 - 8, mx / 2 - 9);
+    } else {
+        print_box(my / 2 - 12, mx / 2 - 6, 4, 10);
+        mvprintw(my / 2 - 10, mx / 2 - 3, "start");
+    }
     refresh();
     while (1) {
         int input = getch();
@@ -119,7 +144,7 @@ void print_char(const char *text, character_state *state, int cursor_position,
 
     } else if (state[position] == CORRECT) {
 
-        attron(COLOR_PAIR(2)); // correct color is red
+        attron(COLOR_PAIR(2)); // correct color is green
 
     } else { // state[position] == UNTYPED
 
@@ -258,7 +283,7 @@ int main(int argc, char *argv[]) {
     char *filename = malloc(sizeof(char) * 100);
 
     int opt;
-    while ((opt = getopt(argc, argv, "f:n:hcw")) != -1) {
+    while ((opt = getopt(argc, argv, "f:n:hcwt")) != -1) {
         switch (opt) {
             case 'n':
                 num_words = atoi(optarg);
@@ -278,9 +303,11 @@ int main(int argc, char *argv[]) {
             case 'w':
                 mode = WU;
                 break;
-
             case 'c':
                 mode = HARD;
+                break;
+            case 't':
+                mode = TAYLOR;
                 break;
         }
     }
@@ -291,6 +318,9 @@ int main(int argc, char *argv[]) {
             break;
         case HARD: 
             strcpy(filename, "./words/complex.txt");
+            break;
+        case TAYLOR: 
+            strcpy(filename, "./words/taylor.txt");
             break;
         case CUSTOM: 
             break;
@@ -307,23 +337,41 @@ int main(int argc, char *argv[]) {
 
 
     // const char *originalText = "Hello, this is a sample line!";
-    char *originalText = calloc(30 * num_words, sizeof(char));
+    char *display_text = calloc(30 * num_words, sizeof(char));
 
     if(mode != WU) {
         for (int i = 0; i < num_words; i++) {
             char *word = malloc(sizeof(char) * 30);
             get_line(filename, word, 30);
-            strcat(originalText, word);
+            strcat(display_text, word);
             free(word);
         }
     } else {
-        readFileToString("./words/ruckus.txt", originalText, num_words*30);
+        init_pair(2, COLOR_YELLOW, COLOR_BLACK);
+        int file_number = rand() % 5;
+        switch (file_number) {
+            case 0:
+                readFileToString("./words/ruckus.txt", display_text, num_words*30);
+                break;
+            case 1:
+                readFileToString("./words/cream.txt", display_text, num_words*30);
+                break;
+            case 2:
+                readFileToString("./words/method.txt", display_text, num_words*30);
+                break;
+            case 3:
+                readFileToString("./words/clan.txt", display_text, num_words*30);
+                break;
+            case 4:
+                readFileToString("./words/liquid.txt", display_text, num_words*30);
+                break;
+        }
     }
 
-    int length = strlen(originalText);
+    int length = strlen(display_text);
     character_state *state = calloc(length, sizeof(character_state));
 
-    startcard(size.my, size.mx);
+    startcard(size.my, size.mx, mode);
 
     int cursorPosition = 0;
     time_t start_t, end_t;
@@ -335,7 +383,7 @@ int main(int argc, char *argv[]) {
         clear(); // Clear the screen
 
         // Print the line with cursor and highlight
-        print_frame(originalText, state, cursorPosition, cursor_start,
+        print_frame(display_text, state, cursorPosition, cursor_start,
                     cursor_end);
 
         int userInput = getch(); // Get user input
@@ -349,8 +397,8 @@ int main(int argc, char *argv[]) {
             cursorPosition--;
             state[cursorPosition] = UNTYPED;
         } else {
-            if (cursorPosition < strlen(originalText) &&
-                originalText[cursorPosition] != userInput) {
+            if (cursorPosition < strlen(display_text) &&
+                display_text[cursorPosition] != userInput) {
                 state[cursorPosition] = INCORRECT;
                 misses++;
             } else {
@@ -358,7 +406,7 @@ int main(int argc, char *argv[]) {
             }
             cursorPosition++;
 
-            print_frame(originalText, state, cursorPosition, cursor_start,
+            print_frame(display_text, state, cursorPosition, cursor_start,
                         cursor_end);
         }
 
@@ -374,5 +422,8 @@ int main(int argc, char *argv[]) {
     int wrong = compute_accuracy(state, length);
     endcard(diff, length, wrong, misses, size.mx, size.my);
 
+    free(filename);
+    free(state);
+    free(display_text);
     endwin(); // End NCurses
 }
