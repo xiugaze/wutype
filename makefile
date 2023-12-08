@@ -1,7 +1,7 @@
 CC=gcc                      # c compiler
 CFLAGS=-c -Wall -ggdb        # compiler flags
 LDFLAGS= -l ncursesw                   # linker arguments
-SOURCES=main.c 
+SOURCES=main.c wutype.c utils.c
 OBJECTS=$(patsubst %.c,build/%.o,$(SOURCES))
 DEPS=$(patsubst %.o,%.d,$(OBJECTS))
 EXECUTABLE=build/main
