@@ -1,4 +1,6 @@
 # wutype
+![image](https://github.com/MSOE-Rothe/final-project-xiugaze/assets/12285557/7a0bcec9-aa0b-4275-9ac6-c55f8d54f4c8)
+
 wutype is a typing test à la monkeytype. The only external dependency is `ncurses`. 
 ## building and running
 ```
