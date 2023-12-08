@@ -20,7 +20,6 @@ typedef enum {
     EASY,
     HARD,
     WU,
-    CUSTOM,
     TAYLOR,
 } gamemode;
 
@@ -249,10 +248,10 @@ int readFileToString(const char *filename, char *buffer, size_t bufferSize) {
     return bytesRead;
 }
 
-int get_line(char *filename, char *buffer, int size) {
+int get_line(char *filename, char *buffer, int size, int dict_size) {
 
     FILE *file = fopen(filename, "r");
-    int line_number = rand() % 1000;
+    int line_number = rand() % dict_size;
 
     for (int i = 1; i < line_number; ++i) {
         if (fgets(buffer, (int)size, file) == NULL) {
@@ -275,27 +274,29 @@ int get_line(char *filename, char *buffer, int size) {
     return strlen(buffer);
 }
 
-void print_help() { printf("help text\n"); }
+void print_help() { 
+    printf(
+        "wutype: a typing speed test\n"
+        "press enter to start\n"
+        "options:\n"
+        "\t-c: use complex dictionary\n"
+        "\t-w: use wu-tang dictionary\n"
+        "\t-t: use dr. taylor's CS2852 lab 9 dictionary (warning: contains slurs)\n"
+        "\t-n <number>: specify number of words\n"
+    ); 
+}
 
 int main(int argc, char *argv[]) {
+    int dict_size = 0;
     int num_words = 30;
     gamemode mode = EASY;
     char *filename = malloc(sizeof(char) * 100);
 
     int opt;
-    while ((opt = getopt(argc, argv, "f:n:hcwt")) != -1) {
+    while ((opt = getopt(argc, argv, "n:hcwt")) != -1) {
         switch (opt) {
             case 'n':
                 num_words = atoi(optarg);
-                break;
-            case 'f':
-                if (access(optarg, F_OK) != 0) {
-                    printf("Error: file %s not found, exiting\n", optarg);
-                    exit(1);
-                } else {
-                    strcpy(filename, optarg);
-                    mode = CUSTOM;
-                }
                 break;
             case 'h':
                 print_help();
@@ -315,14 +316,15 @@ int main(int argc, char *argv[]) {
     switch(mode) {
         case EASY:
             strcpy(filename, "./words/simple.txt");
+            dict_size = 1000;
             break;
         case HARD: 
             strcpy(filename, "./words/complex.txt");
+            dict_size = 1000;
             break;
         case TAYLOR: 
             strcpy(filename, "./words/taylor.txt");
-            break;
-        case CUSTOM: 
+            dict_size = 113809;
             break;
         case WU:
             num_words = 100;
@@ -342,7 +344,7 @@ int main(int argc, char *argv[]) {
     if(mode != WU) {
         for (int i = 0; i < num_words; i++) {
             char *word = malloc(sizeof(char) * 30);
-            get_line(filename, word, 30);
+            get_line(filename, word, 30, dict_size);
             strcat(display_text, word);
             free(word);
         }
