@@ -105,7 +105,7 @@ void startcard(int my, int mx, gamemode mode) {
         draw_logo(my/2 - 8, mx / 2 - 9);
     } else {
         print_box(my / 2 - 12, mx / 2 - 6, 4, 10);
-        mvprintw(my / 2 - 10, mx / 2 - 3, "start");
+        mvprintw(my / 2 - 10, mx / 2 - 3, "enter");
     }
     refresh();
     while (1) {

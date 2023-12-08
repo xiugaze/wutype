@@ -4,7 +4,7 @@ LDFLAGS= -l ncursesw                   # linker arguments
 SOURCES=main.c wutype.c utils.c
 OBJECTS=$(patsubst %.c,build/%.o,$(SOURCES))
 DEPS=$(patsubst %.o,%.d,$(OBJECTS))
-EXECUTABLE=build/main
+EXECUTABLE=build/wutype
 
 all: $(EXECUTABLE)
 
