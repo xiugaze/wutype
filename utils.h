@@ -1,3 +1,13 @@
+/**
+ * @file utils.h
+ * @author Caleb Andreano (andreanoc@msoe.edu)
+ * @class CPE2600-121
+ * @brief Utilities for wutype
+ * 
+ * Course: CPE2600-121
+ * Assignment: Lab Wk 15
+ * @date 2023-12-07
+ */
 #ifndef UTILS
 #define UTILS
 

@@ -1,3 +1,12 @@
+# /**
+#  * @file makefile
+#  * @author Caleb Andreano (andreanoc@msoe.edu)
+#  * @class CPE2600-121
+#  * 
+#  * Assignment: Lab Wk 15
+#  * @date 2023-12-07
+#  */
+
 CC=gcc                      # c compiler
 CFLAGS=-c -Wall -ggdb        # compiler flags
 LDFLAGS= -l ncursesw                   # linker arguments
