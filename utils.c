@@ -105,7 +105,11 @@ void startcard(int my, int mx, gamemode mode) {
         draw_logo(my/2 - 8, mx / 2 - 9);
     } else {
         print_box(my / 2 - 12, mx / 2 - 6, 4, 10);
-        mvprintw(my / 2 - 10, mx / 2 - 3, "enter");
+        if(mode == CHRIS) {
+            mvprintw(my / 2 - 10, mx / 2 - 3, "chris");
+        } else {
+            mvprintw(my / 2 - 10, mx / 2 - 3, "enter");
+        }
     }
     refresh();
     while (1) {
@@ -128,7 +132,7 @@ void startcard(int my, int mx, gamemode mode) {
  */
 void endcard(float time, int length, int incorrect, int misses, int mx,
              int my) {
-    attron(COLOR_PAIR(2)); // Turn on white color for
+    attron(COLOR_PAIR(3)); // Turn on white color for
     attroff(A_UNDERLINE);  // Turn off underline after printing cursor
     double accuracy = 100 - incorrect / (double)(length) * 100;
     double wpm = ((length / time) * 60) / 5;
