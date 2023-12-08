@@ -1,3 +1,14 @@
+/**
+ * @file wutype.c
+ * @author Caleb Andreano (andreanoc@msoe.edu)
+ * @class CPE2600-121
+ * @brief functions for wutype
+ * 
+ * Course: CPE2600-121
+ * Assignment: Lab Wk 15
+ * @date 2023-12-07
+ */
+
 #include <locale.h>
 #include <ncurses.h>
 #include <stdio.h>
@@ -8,6 +19,15 @@
 #include <wchar.h>
 
 #include "wutype.h"
+
+/**
+ * @brief prints a single character to the frame
+ * 
+ * @param text text array
+ * @param state game state
+ * @param cursor_position current cursor position
+ * @param position position in text array
+ */
 void print_char(const char *text, character_state *state, int cursor_position,
                 int position) {
 
@@ -42,6 +62,15 @@ void print_char(const char *text, character_state *state, int cursor_position,
     attroff(A_UNDERLINE); // Turn off underline after printing cursor
 }
 
+/**
+ * @brief prints a game frame
+ * 
+ * @param text text to print
+ * @param state current game state
+ * @param cursor_position current cursor position
+ * @param cursor_start farthest left visual text position
+ * @param cursor_end  farthers right visual text position
+ */
 void print_frame(const char *text, character_state *state, int cursor_position,
                  int cursor_start, int cursor_end) {
     /*
@@ -91,6 +120,14 @@ void print_frame(const char *text, character_state *state, int cursor_position,
     }
 }
 
+/**
+ * @brief reads a file to a string, removing newlines
+ * 
+ * @param filename 
+ * @param buffer 
+ * @param bufferSize 
+ * @return int 
+ */
 int readFileToString(const char *filename, char *buffer, int bufferSize) {
     // Open the file for reading
     FILE *file = fopen(filename, "r");
@@ -114,6 +151,15 @@ int readFileToString(const char *filename, char *buffer, int bufferSize) {
     return bytesRead;
 }
 
+/**
+ * @brief returns a random line from a dictionary file
+ * 
+ * @param filename 
+ * @param buffer 
+ * @param size 
+ * @param dict_size 
+ * @return int 
+ */
 int get_line(char *filename, char *buffer, int size, int dict_size) {
 
     FILE *file = fopen(filename, "r");
@@ -140,6 +186,11 @@ int get_line(char *filename, char *buffer, int size, int dict_size) {
     return strlen(buffer);
 }
 
+/**
+ * @brief initialize ncurses settings
+ * 
+ * @return window_size 
+ */
 window_size init_curses() {
     setlocale(LC_ALL, "C.UTF-8");
     initscr();            // Initialize NCurses

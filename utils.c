@@ -1,3 +1,14 @@
+/**
+ * @file utils.c
+ * @author Caleb Andreano (andreanoc@msoe.edu)
+ * @class CPE2600-121
+ * @brief Utilities for wutype
+ * 
+ * Course: CPE2600-121
+ * Assignment: Lab Wk 15
+ * @date 2023-12-07
+ */
+
 #include <locale.h>
 #include <ncurses.h>
 #include <stdio.h>
@@ -9,6 +20,15 @@
 
 #include "wutype.h"
 
+/**
+ * @brief prints a box with rounded corners with the top left corner at 
+ * row y, column x
+ * 
+ * @param y top left corner row
+ * @param x top left corner column
+ * @param height height of box in rows
+ * @param width with of box in columns
+ */
 void print_box(int y, int x, int height, int width) {
     const static wchar_t *top_left = L"╭";
     const static wchar_t *top_right = L"╮";
@@ -35,6 +55,12 @@ void print_box(int y, int x, int height, int width) {
     refresh();
 }
 
+/**
+ * @brief draws the Wu-Tang clan logo at x, y
+ * 
+ * @param y 
+ * @param x 
+ */
 void draw_logo(int y, int x) {
     const wchar_t* logo1 = L" ⢀⣀⡀⠀⠀⠀⠀⠀⠀⢀⣠⣴⣦⡀";
     const wchar_t* logo2 = L"⢀⣿⣿⣿⣿⣷⠂⠀⡐⢾⣿⣿⣿⣿⣷⠀";
@@ -52,6 +78,11 @@ void draw_logo(int y, int x) {
     mvprintw(y+7, x, "%ls", logo7);
 }
 
+/**
+ * @brief Get the window size object
+ * 
+ * @return window_size 
+ */
 window_size get_window_size() {
     int mx = 0, my = 0;
     getmaxyx(stdscr, my, mx);
@@ -59,7 +90,13 @@ window_size get_window_size() {
     return s;
 }
 
-
+/**
+ * @brief Shows the start card and waits for enter
+ * 
+ * @param my vertical window size
+ * @param mx horizontal window size
+ * @param mode 
+ */
 void startcard(int my, int mx, gamemode mode) {
     if(mode == WU) {
         attron(COLOR_PAIR(2)); // Turn on white color for
@@ -78,6 +115,17 @@ void startcard(int my, int mx, gamemode mode) {
         }
     }
 }
+
+/**
+ * @brief Shows the end card and waits for enter
+ * 
+ * @param time total time in s
+ * @param length number of characters
+ * @param incorrect number of incorrect characters at end
+ * @param misses number of misses
+ * @param mx window width
+ * @param my window height
+ */
 void endcard(float time, int length, int incorrect, int misses, int mx,
              int my) {
     attron(COLOR_PAIR(2)); // Turn on white color for
@@ -100,6 +148,13 @@ void endcard(float time, int length, int incorrect, int misses, int mx,
     }
 }
 
+/**
+ * @brief Computes the number of incorrect characters from final state
+ * 
+ * @param state 
+ * @param length 
+ * @return int 
+ */
 int compute_accuracy(character_state *state, int length) {
     int incorrect = 0;
     for (int i = 0; i < length; i++) {
@@ -110,6 +165,10 @@ int compute_accuracy(character_state *state, int length) {
     return incorrect;
 }
 
+/**
+ * @brief Prints the help text
+ * 
+ */
 void print_help() { 
     printf(
         "wutype: a typing speed test\n"

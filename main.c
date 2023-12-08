@@ -1,3 +1,14 @@
+/**
+ * @file main.c
+ * @author Caleb Andreano (andreanoc@msoe.edu)
+ * @class CPE2600-121
+ * @brief Entry point for wutype
+ * 
+ * Course: CPE2600-121
+ * Assignment: Lab Wk 15
+ * @date 2023-12-07
+ */
+
 #include <locale.h>
 #include <ncurses.h>
 #include <stdio.h>
@@ -9,6 +20,13 @@
 
 #include "wutype.h"
 
+/**
+ * @brief Main function for wutype
+ * handles user input and command line arguments
+ * @param argc 
+ * @param argv 
+ * @return int 
+ */
 int main(int argc, char *argv[]) {
     srand(time(NULL));
     int dict_size = 0;
