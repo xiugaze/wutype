@@ -14,6 +14,3 @@ make
 - `-C`: use my roomate Chris' favorite words
 - `-w`: enter the 36 chambers
 - `-t`: use Dr. Taylor's dictionary from CS2852 Lab 9, which does in fact contain every bad word one can think of
-
-## rothe
-i figured out the cube thing but it looked stupid
