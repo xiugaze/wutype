@@ -41,7 +41,7 @@ NIX_ENFORCE_NO_NATIVE='1'
 export NIX_ENFORCE_NO_NATIVE
 NIX_HARDENING_ENABLE='bindnow format fortify fortify3 pic relro stackclashprotection stackprotector strictoverflow zerocallusedregs'
 export NIX_HARDENING_ENABLE
-NIX_LDFLAGS='-rpath /home/caleb/src/final-project-xiugaze/outputs/out/lib  -L/nix/store/vfmnmqsnfiiqmphy7ffh2zqynsxfck1q-ncurses-6.5/lib -L/nix/store/vfmnmqsnfiiqmphy7ffh2zqynsxfck1q-ncurses-6.5/lib'
+NIX_LDFLAGS='-rpath /home/caleb/src/wutype/outputs/out/lib  -L/nix/store/vfmnmqsnfiiqmphy7ffh2zqynsxfck1q-ncurses-6.5/lib -L/nix/store/vfmnmqsnfiiqmphy7ffh2zqynsxfck1q-ncurses-6.5/lib'
 export NIX_LDFLAGS
 NIX_NO_SELF_RPATH='1'
 NIX_STORE='/nix/store'
@@ -135,7 +135,7 @@ name='nix-shell-env'
 export name
 nativeBuildInputs='/nix/store/0fsnicvfpf55nkza12cjnad0w84d6ba7-gcc-wrapper-14.2.1.20250322 /nix/store/p7z72c2s722pbw31jmm3y0nwypksb5fj-gnumake-4.4.1'
 export nativeBuildInputs
-out='/home/caleb/src/final-project-xiugaze/outputs/out'
+out='/home/caleb/src/wutype/outputs/out'
 export out
 outputBin='out'
 outputDev='out'
@@ -166,7 +166,7 @@ preConfigurePhases=' updateAutotoolsGnuConfigScriptsPhase'
 declare -a preFixupHooks=('_moveToShare' '_multioutDocs' '_multioutDevs' )
 preferLocalBuild='1'
 export preferLocalBuild
-prefix='/home/caleb/src/final-project-xiugaze/outputs/out'
+prefix='/home/caleb/src/wutype/outputs/out'
 declare -a propagatedBuildDepFiles=('propagated-build-build-deps' 'propagated-native-build-inputs' 'propagated-build-target-deps' )
 propagatedBuildInputs=''
 export propagatedBuildInputs

@@ -27,6 +27,38 @@
         );
     in
     {
+      packages = forEachSupportedSystem ({pkgs}:
+      {
+          default = pkgs.stdenv.mkDerivation {
+            pname = "wutype";
+            version = "1.0.0";
+            src = ./.;
+            nativeBuildInputs = with pkgs; [
+              gcc
+              gnumake
+            ];
+            buildInputs = with pkgs; [
+              ncurses
+            ];
+            preBuild = ''
+              mkdir -p build
+            '';
+            buildPhase = ''
+              runHook preBuild
+              make all
+              runHook postBuild
+            '';
+            installPhase = ''
+              runHook preInstall
+              mkdir -p $out/bin
+              cp build/wutype $out/bin/
+              runHook postInstall
+            '';
+            postInstall = ''
+              make clean || true
+            '';
+          };
+        });
       devShells = forEachSupportedSystem (
         { pkgs }:
         {
